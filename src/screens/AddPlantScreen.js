@@ -10,19 +10,28 @@ import {
 } from 'react-native';
 import { usePlants } from '../context/PlantContext';
 
-export default function AddPlantScreen({ navigation }) {
+export default function AddPlantScreen() {
   const [plantName, setPlantName] = useState('');
-  const { addPlant, plants } = usePlants();
+  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: string }
+  const { addPlant } = usePlants();
 
   async function handleAddPlant() {
     if (plantName.trim()) {
-      await addPlant(plantName);
-      setPlantName('');
+      try {
+        await addPlant(plantName);
+        setPlantName('');
+        showMessage('success', 'Plant added!');
+      } catch (error) {
+        showMessage('error', 'Failed to add plant. Please try again.');
+      }
     }
   }
 
-  function handleGoToMyPlants() {
-    navigation.replace('Home');
+  function showMessage(type, text) {
+    setMessage({ type, text });
+    setTimeout(() => {
+      setMessage(null);
+    }, 2500);
   }
 
   return (
@@ -30,6 +39,25 @@ export default function AddPlantScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {message && (
+        <View
+          style={[
+            styles.messageContainer,
+            message.type === 'success' ? styles.successMessage : styles.errorMessage,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              message.type === 'success' ? styles.successText : styles.errorText,
+            ]}
+          >
+            {message.type === 'success' ? '✓ ' : '✕ '}
+            {message.text}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.content}>
         <Text style={styles.title}>Add a Plant</Text>
         <Text style={styles.subtitle}>
@@ -53,17 +81,6 @@ export default function AddPlantScreen({ navigation }) {
         >
           <Text style={styles.buttonText}>Add Plant</Text>
         </TouchableOpacity>
-
-        {plants.length > 0 && (
-          <TouchableOpacity
-            style={[styles.button, styles.goButton]}
-            onPress={handleGoToMyPlants}
-          >
-            <Text style={[styles.buttonText, styles.goButtonText]}>
-              Go to My Plants ({plants.length})
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -74,6 +91,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  messageContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  successMessage: {
+    backgroundColor: '#D8F3DC',
+  },
+  errorMessage: {
+    backgroundColor: '#FFEBEE',
+  },
+  messageText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  successText: {
+    color: '#14532D',
+  },
+  errorText: {
+    color: '#C62828',
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
@@ -82,7 +123,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#14532D',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -108,22 +149,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   addButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#1B4332',
   },
   buttonDisabled: {
-    backgroundColor: '#A5D6A7',
-  },
-  goButton: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    backgroundColor: '#2D6A4F',
   },
   buttonText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-  },
-  goButtonText: {
-    color: '#4CAF50',
   },
 });

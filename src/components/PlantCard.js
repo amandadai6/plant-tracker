@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { usePlants } from '../context/PlantContext';
 import CalendarPickerModal from './CalendarPickerModal';
+import ConfirmModal from './ConfirmModal';
+import EditNameModal from './EditNameModal';
 
 export default function PlantCard({ plant }) {
-  const { deletePlant, updatePlantCare } = usePlants();
+  const { deletePlant, updatePlantCare, updatePlantName } = usePlants();
   const [showWaterPicker, setShowWaterPicker] = useState(false);
   const [showPestPicker, setShowPestPicker] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditNameModal, setShowEditNameModal] = useState(false);
 
   // Date range: 12 months in the past to 1 month from today
   const minDate = new Date();
@@ -22,15 +26,14 @@ export default function PlantCard({ plant }) {
     return date.toLocaleDateString(undefined, options);
   }
 
-  function handleDelete() {
-    Alert.alert(
-      'Delete Plant',
-      `Are you sure you want to delete "${plant.nickname}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deletePlant(plant.id) },
-      ]
-    );
+  function handleDeleteConfirm() {
+    setShowDeleteModal(false);
+    deletePlant(plant.id);
+  }
+
+  function handleNameSave(newName) {
+    setShowEditNameModal(false);
+    updatePlantName(plant.id, newName);
   }
 
   function handleWaterDateConfirm(dateString) {
@@ -39,10 +42,20 @@ export default function PlantCard({ plant }) {
     updatePlantCare(plant.id, 'lastWatered', date.toISOString());
   }
 
+  function handleWaterDateClear() {
+    setShowWaterPicker(false);
+    updatePlantCare(plant.id, 'lastWatered', null);
+  }
+
   function handlePestDateConfirm(dateString) {
     setShowPestPicker(false);
     const date = new Date(dateString);
     updatePlantCare(plant.id, 'lastPestTreatment', date.toISOString());
+  }
+
+  function handlePestDateClear() {
+    setShowPestPicker(false);
+    updatePlantCare(plant.id, 'lastPestTreatment', null);
   }
 
   function getDateString(isoString) {
@@ -53,9 +66,17 @@ export default function PlantCard({ plant }) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.name}>{plant.nickname}</Text>
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Text style={styles.deleteText}>Delete</Text>
+        <TouchableOpacity 
+          onPress={() => setShowEditNameModal(true)}
+          style={styles.nameButton}
+        >
+          <Text style={styles.name}>{plant.nickname}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setShowDeleteModal(true)} 
+          style={styles.deleteButton}
+        >
+          <Text style={styles.deleteText}>✕</Text>
         </TouchableOpacity>
       </View>
 
@@ -84,6 +105,8 @@ export default function PlantCard({ plant }) {
         selectedDate={getDateString(plant.lastWatered)}
         onConfirm={handleWaterDateConfirm}
         onCancel={() => setShowWaterPicker(false)}
+        onClear={handleWaterDateClear}
+        showClear={!!plant.lastWatered}
         minDate={minDate}
         maxDate={maxDate}
         title="Last Watered"
@@ -94,9 +117,27 @@ export default function PlantCard({ plant }) {
         selectedDate={getDateString(plant.lastPestTreatment)}
         onConfirm={handlePestDateConfirm}
         onCancel={() => setShowPestPicker(false)}
+        onClear={handlePestDateClear}
+        showClear={!!plant.lastPestTreatment}
         minDate={minDate}
         maxDate={maxDate}
         title="Last Pest Treatment"
+      />
+
+      <ConfirmModal
+        visible={showDeleteModal}
+        message="Are you sure you want to remove this plant from your list?"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+        confirmText="Remove"
+        cancelText="Cancel"
+      />
+
+      <EditNameModal
+        visible={showEditNameModal}
+        currentName={plant.nickname}
+        onSave={handleNameSave}
+        onCancel={() => setShowEditNameModal(false)}
       />
     </View>
   );
@@ -121,21 +162,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  nameButton: {
+    flex: 1,
+  },
   name: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#2E7D32',
-    flex: 1,
+    color: '#14532D',
   },
   deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#ffebee',
-    borderRadius: 6,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteText: {
-    color: '#c62828',
-    fontWeight: '500',
+    fontSize: 20,
+    color: '#666',
+    fontWeight: '300',
   },
   careRow: {
     flexDirection: 'row',
@@ -148,13 +192,13 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   dateButton: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#D8F3DC',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
   },
   dateText: {
-    color: '#2E7D32',
+    color: '#14532D',
     fontWeight: '500',
   },
 });

@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#2E7D32',
+    color: '#14532D',
     marginBottom: 8,
   },
   emptySubtitle: {
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#1B4332',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

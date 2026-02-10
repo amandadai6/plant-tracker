@@ -45,6 +45,14 @@ export function PlantProvider({ children }) {
     await savePlants(updatedPlants);
   }
 
+  async function updatePlantName(id, newName) {
+    const updatedPlants = plants.map((plant) =>
+      plant.id === id ? { ...plant, nickname: newName.trim() } : plant
+    );
+    setPlants(updatedPlants);
+    await savePlants(updatedPlants);
+  }
+
   return (
     <PlantContext.Provider
       value={{
@@ -53,6 +61,7 @@ export function PlantProvider({ children }) {
         addPlant,
         deletePlant,
         updatePlantCare,
+        updatePlantName,
       }}
     >
       {children}

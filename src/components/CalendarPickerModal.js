@@ -7,6 +7,8 @@ export default function CalendarPickerModal({
   selectedDate,
   onConfirm,
   onCancel,
+  onClear,
+  showClear,
   minDate,
   maxDate,
   title,
@@ -29,9 +31,16 @@ export default function CalendarPickerModal({
     }
   }
 
-  function handleCancel() {
+  function handleDismiss() {
     setTempSelectedDate(null);
     onCancel();
+  }
+
+  function handleClear() {
+    setTempSelectedDate(null);
+    if (onClear) {
+      onClear();
+    }
   }
 
   function formatMinDate() {
@@ -48,7 +57,7 @@ export default function CalendarPickerModal({
     ? {
         [tempSelectedDate]: {
           selected: true,
-          selectedColor: '#4CAF50',
+          selectedColor: '#1B4332',
         },
       }
     : {};
@@ -58,11 +67,16 @@ export default function CalendarPickerModal({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={handleCancel}
+      onRequestClose={handleDismiss}
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {title && <Text style={styles.title}>{title}</Text>}
+          <View style={styles.header}>
+            {title && <Text style={styles.title}>{title}</Text>}
+            <TouchableOpacity onPress={handleDismiss} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
           <Calendar
             current={tempSelectedDate || undefined}
@@ -75,15 +89,15 @@ export default function CalendarPickerModal({
               backgroundColor: '#ffffff',
               calendarBackground: '#ffffff',
               textSectionTitleColor: '#666666',
-              selectedDayBackgroundColor: '#4CAF50',
+              selectedDayBackgroundColor: '#1B4332',
               selectedDayTextColor: '#ffffff',
-              todayTextColor: '#4CAF50',
+              todayTextColor: '#1B4332',
               dayTextColor: '#333333',
               textDisabledColor: '#d9d9d9',
-              dotColor: '#4CAF50',
+              dotColor: '#1B4332',
               selectedDotColor: '#ffffff',
-              arrowColor: '#4CAF50',
-              monthTextColor: '#2E7D32',
+              arrowColor: '#1B4332',
+              monthTextColor: '#14532D',
               textDayFontWeight: '400',
               textMonthFontWeight: '600',
               textDayHeaderFontWeight: '500',
@@ -94,26 +108,30 @@ export default function CalendarPickerModal({
             style={styles.calendar}
           />
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+          {/* Only show button row if there's something to show */}
+          {(showClear || tempSelectedDate) && (
+            <View style={styles.buttonRow}>
+              {showClear ? (
+                <TouchableOpacity
+                  style={[styles.button, styles.clearButton]}
+                  onPress={handleClear}
+                >
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.button} />
+              )}
 
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.confirmButton,
-                !tempSelectedDate && styles.confirmButtonDisabled,
-              ]}
-              onPress={handleConfirm}
-              disabled={!tempSelectedDate}
-            >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
-            </TouchableOpacity>
-          </View>
+              {tempSelectedDate && (
+                <TouchableOpacity
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={handleConfirm}
+                >
+                  <Text style={styles.confirmButtonText}>Confirm</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -140,12 +158,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2E7D32',
-    textAlign: 'center',
-    marginBottom: 16,
+    color: '#14532D',
+    flex: 1,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#666666',
+    fontWeight: '300',
   },
   calendar: {
     borderRadius: 12,
@@ -162,21 +196,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  cancelButton: {
+  clearButton: {
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
-  cancelButtonText: {
+  clearButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#666666',
   },
   confirmButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#1B4332',
   },
   confirmButtonDisabled: {
-    backgroundColor: '#A5D6A7',
+    backgroundColor: '#2D6A4F',
   },
   confirmButtonText: {
     fontSize: 16,
