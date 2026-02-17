@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  Image,
   ImageBackground,
   TouchableOpacity,
   useWindowDimensions,
@@ -15,8 +14,6 @@ import PlantGridCell from '../components/PlantGridCell';
 import PlantDetailModal from '../components/PlantDetailModal';
 
 const grassTile = require('../../assets/sprites/grass-tile.png');
-const soilImage = require('../../assets/sprites/soil-patch.png');
-
 export default function HomeScreen({ navigation }) {
   const { plants } = usePlants();
   const { width } = useWindowDimensions();
@@ -82,8 +79,8 @@ export default function HomeScreen({ navigation }) {
           ]}
         >
           <Text style={styles.headerTitle}>Pallet Town</Text>
-          {rows.map((row, rowIndex) => (
-            <View key={rowIndex} style={styles.rowContainer}>
+          {rows.map((row) => (
+            <View key={row.map((p) => p.id).join('-')} style={styles.rowContainer}>
               {/* Plants sitting above the soil */}
               <View style={styles.plantsRow}>
                 {row.map((plant) => (

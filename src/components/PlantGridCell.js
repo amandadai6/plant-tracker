@@ -33,7 +33,7 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
       ).start();
     }, delay);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [rotation]);
 
   const rotateInterpolation = rotation.interpolate({
     inputRange: [-3, 3],

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { usePlants } from '../context/PlantContext';
 import CalendarPickerModal from './CalendarPickerModal';
@@ -12,11 +12,13 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
 
-  const minDate = new Date();
-  minDate.setMonth(minDate.getMonth() - 12);
-
-  const maxDate = new Date();
-  maxDate.setMonth(maxDate.getMonth() + 1);
+  const { minDate, maxDate } = useMemo(() => {
+    const min = new Date();
+    min.setMonth(min.getMonth() - 12);
+    const max = new Date();
+    max.setMonth(max.getMonth() + 1);
+    return { minDate: min, maxDate: max };
+  }, []);
 
   if (!plant) return null;
 

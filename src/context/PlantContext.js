@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { getPlants, savePlants } from '../storage/plantStorage';
 
 const PlantContext = createContext();
+
+function generateId() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+}
 
 export function PlantProvider({ children }) {
   const [plants, setPlants] = useState([]);
@@ -12,45 +17,74 @@ export function PlantProvider({ children }) {
   }, []);
 
   async function loadPlants() {
-    const storedPlants = await getPlants();
-    setPlants(storedPlants);
-    setIsLoading(false);
+    try {
+      const storedPlants = await getPlants();
+      setPlants(storedPlants);
+    } catch {
+      Alert.alert('Error', 'Failed to load your plants. Please restart the app.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function addPlant(nickname) {
     const newPlant = {
-      id: Date.now().toString(),
+      id: generateId(),
       nickname: nickname.trim(),
       speciesId: null,
       speciesName: null,
       lastWatered: null,
       lastPestTreatment: null,
     };
+    const previousPlants = plants;
     const updatedPlants = [...plants, newPlant];
     setPlants(updatedPlants);
-    await savePlants(updatedPlants);
+    try {
+      await savePlants(updatedPlants);
+    } catch {
+      setPlants(previousPlants);
+      throw new Error('Failed to save plant.');
+    }
   }
 
   async function deletePlant(id) {
+    const previousPlants = plants;
     const updatedPlants = plants.filter((plant) => plant.id !== id);
     setPlants(updatedPlants);
-    await savePlants(updatedPlants);
+    try {
+      await savePlants(updatedPlants);
+    } catch {
+      setPlants(previousPlants);
+      Alert.alert('Error', 'Failed to delete plant. Please try again.');
+    }
   }
 
   async function updatePlantCare(id, field, date) {
+    const previousPlants = plants;
     const updatedPlants = plants.map((plant) =>
       plant.id === id ? { ...plant, [field]: date } : plant
     );
     setPlants(updatedPlants);
-    await savePlants(updatedPlants);
+    try {
+      await savePlants(updatedPlants);
+    } catch {
+      setPlants(previousPlants);
+      Alert.alert('Error', 'Failed to update plant. Please try again.');
+    }
   }
 
   async function updatePlantName(id, newName) {
+    const previousPlants = plants;
     const updatedPlants = plants.map((plant) =>
       plant.id === id ? { ...plant, nickname: newName.trim() } : plant
     );
     setPlants(updatedPlants);
-    await savePlants(updatedPlants);
+    try {
+      await savePlants(updatedPlants);
+    } catch {
+      setPlants(previousPlants);
+      Alert.alert('Error', 'Failed to rename plant. Please try again.');
+    }
   }
 
   return (
