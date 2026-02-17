@@ -62,7 +62,7 @@ function AppNavigator() {
           <Stack.Screen
             name="Home"
             component={HomeScreen}
-            options={{ title: 'My Plants' }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="AddPlant"

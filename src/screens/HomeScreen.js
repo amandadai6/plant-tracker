@@ -1,10 +1,55 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  ImageBackground,
+  TouchableOpacity,
+  useWindowDimensions,
+  StyleSheet,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlants } from '../context/PlantContext';
-import PlantCard from '../components/PlantCard';
+import PlantGridCell from '../components/PlantGridCell';
+import PlantDetailModal from '../components/PlantDetailModal';
+
+const grassTile = require('../../assets/sprites/grass-tile.png');
+const soilImage = require('../../assets/sprites/soil-patch.png');
 
 export default function HomeScreen({ navigation }) {
   const { plants } = usePlants();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [selectedPlantId, setSelectedPlantId] = useState(null);
+
+  const NUM_COLUMNS = 4;
+  const GRID_PADDING = 12;
+  const CELL_GAP = 4;
+  const availableWidth = width - GRID_PADDING * 2;
+  const numColumns = NUM_COLUMNS;
+  const cellSize = Math.floor(
+    (availableWidth - CELL_GAP * (numColumns - 1)) / numColumns,
+  );
+
+  const selectedPlant = selectedPlantId
+    ? plants.find((p) => p.id === selectedPlantId) || null
+    : null;
+
+  useEffect(() => {
+    if (selectedPlantId && !plants.find((p) => p.id === selectedPlantId)) {
+      setSelectedPlantId(null);
+    }
+  }, [plants, selectedPlantId]);
+
+  // Group plants into rows
+  const rows = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < plants.length; i += numColumns) {
+      result.push(plants.slice(i, i + numColumns));
+    }
+    return result;
+  }, [plants, numColumns]);
 
   function renderEmptyState() {
     return (
@@ -17,36 +62,110 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
+  const soilStripWidth = availableWidth;
+  const soilStripHeight = cellSize * 0.5;
+  const soilOverlap = soilStripHeight * 0.7;
+
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={plants}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PlantCard plant={item} />}
-        ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={plants.length === 0 ? styles.emptyList : styles.list}
-      />
+    <ImageBackground
+      source={grassTile}
+      resizeMode="repeat"
+      style={styles.container}
+    >
+      {plants.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.grid,
+            { paddingHorizontal: GRID_PADDING, paddingTop: insets.top + 12, paddingBottom: 80 },
+          ]}
+        >
+          <Text style={styles.headerTitle}>Pallet Town</Text>
+          {rows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.rowContainer}>
+              {/* Plants sitting above the soil */}
+              <View style={styles.plantsRow}>
+                {row.map((plant) => (
+                  <View key={plant.id} style={{ width: cellSize }}>
+                    <PlantGridCell
+                      plant={plant}
+                      onPress={(p) => setSelectedPlantId(p.id)}
+                      cellSize={cellSize}
+                    />
+                  </View>
+                ))}
+              </View>
+              {/* Continuous soil strip pulled up into the plants */}
+              <View
+                style={[
+                  styles.soilStrip,
+                  {
+                    width: soilStripWidth,
+                    height: soilStripHeight,
+                    borderRadius: soilStripHeight / 2,
+                    marginTop: -soilOverlap,
+                  },
+                ]}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 24 }]}
         onPress={() => navigation.navigate('AddPlant')}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
-    </View>
+
+      <PlantDetailModal
+        visible={!!selectedPlant}
+        plant={selectedPlant}
+        onClose={() => setSelectedPlantId(null)}
+      />
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
-  list: {
-    paddingVertical: 8,
+  grid: {
+    alignItems: 'flex-start',
   },
-  emptyList: {
-    flex: 1,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    width: '100%',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 2,
+  },
+  rowContainer: {
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: 30,
+  },
+  plantsRow: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'flex-end',
+    zIndex: 2,
+  },
+  soilStrip: {
+    backgroundColor: '#8B6914',
+    zIndex: 1,
+    borderWidth: 2,
+    borderTopColor: '#A07828',
+    borderLeftColor: '#A07828',
+    borderRightColor: '#6B4C12',
+    borderBottomColor: '#6B4C12',
   },
   emptyContainer: {
     flex: 1,
@@ -57,18 +176,23 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#14532D',
+    color: '#fff',
     marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#fff',
     textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   fab: {
     position: 'absolute',
     right: 24,
-    bottom: 24,
     width: 60,
     height: 60,
     borderRadius: 30,
