@@ -27,12 +27,19 @@ export function PlantProvider({ children }) {
     }
   }
 
-  async function addPlant(nickname) {
+  // speciesData is optional — null when user skips species search.
+  // When provided, it contains care fields from the Perenual API.
+  async function addPlant(nickname, speciesData = null) {
     const newPlant = {
       id: generateId(),
       nickname: nickname.trim(),
-      speciesId: null,
-      speciesName: null,
+      speciesId: speciesData?.speciesId || null,
+      speciesName: speciesData?.commonName || null,
+      scientificName: speciesData?.scientificName || null,
+      watering: speciesData?.watering || null,
+      sunlight: speciesData?.sunlight || [],
+      cycle: speciesData?.cycle || null,
+      thumbnail: speciesData?.thumbnail || null,
       lastWatered: null,
       lastPestTreatment: null,
     };
