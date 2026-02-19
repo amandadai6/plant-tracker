@@ -1,57 +1,68 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 
-const SOIL_COLOR = '#8B5840'; // warm reddish-brown to match reference
-const TUFT_HEIGHTS = [4, 6, 5, 7, 4, 5, 6, 4, 7, 5];
-const TUFT_SPACING = 4; // px between tufts along arc
-const TUFT_HALF_WIDTH = 1; // each side of the triangle = 1px → 2px base
+const SOIL_COLOR = '#8B5840';
+const TUFT_HEIGHTS = [2, 3, 2, 4, 2, 3, 3, 2, 4, 3];
+const TUFT_SPACING = 4;
+const TUFT_HALF_W = 1;
+// Expand the container by this much on every side so no tuft tip is clipped.
+// Must be >= max(TUFT_HEIGHTS).
+const PAD = 4;
 
-// Build tuft positions going clockwise around the full pill perimeter.
-// Each tuft uses the borderBottom triangle trick with a rotation so the
-// apex points outward and the base sits on (and is hidden by) the pill body.
-// Formula: tip placed h px outward from the circumference point along angle θ,
-// then rotated θ° so the base points inward.
+// Tuft positions are computed in pill-local coordinates (pill top-left = 0,0).
+// For a borderBottom triangle on a 0×0 View, React Native places the apex at
+// the element's (left, top) and the base H px "downward." Rotating by −θ° around
+// that apex (which IS the layout-center for a 0×0 element) swings the base from
+// "downward" to "inward," leaving the sharp tip pointing outward.
+//
+// Element placement:
+//   left  = px + H·sin(θ)    ← apex H px outward from the circumference point
+//   top   = py − H·cos(θ)
+//   rotate = −θ°
 function buildTufts(width, height) {
-  const R = height / 2; // cap radius for a pill shape
+  const R = height / 2;
   const tufts = [];
   let idx = 0;
 
-  function addTuft(px, py, angleDeg) {
-    const h = TUFT_HEIGHTS[idx % TUFT_HEIGHTS.length];
-    idx++;
-    const rad = (angleDeg * Math.PI) / 180;
+  const nextH = () => TUFT_HEIGHTS[idx++ % TUFT_HEIGHTS.length];
+
+  function addTuft(px, py, thetaDeg) {
+    const h = nextH();
+    const rad = (thetaDeg * Math.PI) / 180;
+    // React Native rotates a 0×0 border element around its visual center
+    // (left, top + h/2), not its layout corner. Solving for the element
+    // position that places the apex at the outer tip after rotation:
+    //   left = px + (h/2)·sin(θ)
+    //   top  = py − (h/2)·(1 + cos(θ))
     tufts.push({
-      // Place element so the triangle tip sits h px outward from (px, py)
-      left: px + h * Math.sin(rad),
-      top: py - h * Math.cos(rad),
+      left: px + (h / 2) * Math.sin(rad),
+      top:  py - (h / 2) * (1 + Math.cos(rad)),
       h,
-      angleDeg,
+      rotateDeg: -thetaDeg,
     });
   }
 
-  // 1. Straight top edge — tufts point UP (θ = 0°)
+  // 1. Straight top edge (θ = 0°, apex points up)
   for (let x = R; x <= width - R; x += TUFT_SPACING) {
     addTuft(x, 0, 0);
   }
 
-  // 2. Right cap — θ sweeps 0° → 180° (top-right → right → bottom-right)
+  // 2. Right cap: θ sweeps 0° → 180°
   const numCap = Math.max(3, Math.floor((Math.PI * R) / TUFT_SPACING));
-  const rCx = width - R;
-  const rCy = R;
+  const rCx = width - R, rCy = R;
   for (let i = 0; i <= numCap; i++) {
     const θ = (i / numCap) * 180;
     const rad = (θ * Math.PI) / 180;
     addTuft(rCx + R * Math.sin(rad), rCy - R * Math.cos(rad), θ);
   }
 
-  // 3. Straight bottom edge — tufts point DOWN (θ = 180°), right → left
+  // 3. Straight bottom edge (θ = 180°, apex points down)
   for (let x = width - R; x >= R; x -= TUFT_SPACING) {
     addTuft(x, height, 180);
   }
 
-  // 4. Left cap — θ sweeps 180° → 360° (bottom-left → left → top-left)
-  const lCx = R;
-  const lCy = R;
+  // 4. Left cap: θ sweeps 180° → 360°
+  const lCx = R, lCy = R;
   for (let i = 0; i <= numCap; i++) {
     const θ = 180 + (i / numCap) * 180;
     const rad = (θ * Math.PI) / 180;
@@ -64,34 +75,46 @@ function buildTufts(width, height) {
 export default function SoilStrip({ width, height, borderRadius, marginTop }) {
   const tufts = useMemo(() => buildTufts(width, height), [width, height]);
 
+  // The container is PAD px larger on every side so no tuft tip falls outside
+  // the layout bounds (avoiding ScrollView clipping). The pill body and every
+  // tuft coordinate are shifted by PAD so the pill appears at the same screen
+  // position as before.
   return (
-    <View style={{ width, height, marginTop, zIndex: 1, overflow: 'visible' }}>
+    <View
+      style={{
+        width: width + 2 * PAD,
+        height: height + 2 * PAD,
+        marginTop: marginTop - PAD,
+        marginLeft: -PAD,
+        zIndex: 1,
+      }}
+    >
       {tufts.map((t, i) => (
         <View
           key={i}
           style={{
             position: 'absolute',
-            left: t.left,
-            top: t.top,
+            left: t.left + PAD,
+            top:  t.top  + PAD,
             width: 0,
             height: 0,
-            borderLeftWidth: TUFT_HALF_WIDTH,
-            borderRightWidth: TUFT_HALF_WIDTH,
+            borderLeftWidth:   TUFT_HALF_W,
+            borderRightWidth:  TUFT_HALF_W,
             borderBottomWidth: t.h,
-            borderLeftColor: 'transparent',
-            borderRightColor: 'transparent',
+            borderLeftColor:   'transparent',
+            borderRightColor:  'transparent',
             borderBottomColor: SOIL_COLOR,
-            transform: [{ rotate: `${t.angleDeg}deg` }],
+            transform: [{ rotate: `${t.rotateDeg}deg` }],
           }}
         />
       ))}
 
-      {/* Main pill body — rendered on top so tuft bases are cleanly hidden */}
+      {/* Pill body — same colour, covers tuft bases, shifted by PAD */}
       <View
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
+          top:  PAD,
+          left: PAD,
           width,
           height,
           backgroundColor: SOIL_COLOR,

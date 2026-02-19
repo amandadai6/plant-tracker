@@ -14,14 +14,14 @@ export default function PalletTownBanner() {
       useNativeDriver: true,
     }).start();
 
-    // Slide back up after 5 seconds
+    // Slide back up after 3 seconds
     const timer = setTimeout(() => {
       Animated.timing(translateY, {
         toValue: -120,
         duration: 400,
         useNativeDriver: true,
       }).start();
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);

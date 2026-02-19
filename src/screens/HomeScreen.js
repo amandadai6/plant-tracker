@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   ImageBackground,
+  Image,
   TouchableOpacity,
   useWindowDimensions,
   StyleSheet,
@@ -16,6 +17,9 @@ import PalletTownBanner from '../components/PalletTownBanner';
 import SoilStrip from '../components/SoilStrip';
 
 const grassTile = require('../../assets/sprites/grass-tile.png');
+const bulbasaur = require('../../assets/sprites/bulbasaur.png');
+const charmander = require('../../assets/sprites/charmander.png');
+const squirtle = require('../../assets/sprites/squirtle.png');
 export default function HomeScreen({ navigation }) {
   const { plants } = usePlants();
   const { width } = useWindowDimensions();
@@ -108,6 +112,12 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       )}
 
+      <View style={[styles.starterRow, { bottom: insets.bottom + 20 }]}>
+        <Image source={bulbasaur} style={styles.starterSprite} />
+        <Image source={charmander} style={[styles.starterSprite, { width: 24, height: 24 }]} />
+        <Image source={squirtle} style={[styles.starterSprite, { width: 24, height: 24 }]} />
+      </View>
+
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 24 }]}
         onPress={() => navigation.navigate('AddPlant')}
@@ -164,6 +174,17 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  starterRow: {
+    position: 'absolute',
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  starterSprite: {
+    width: 48,
+    height: 48,
+    imageRendering: 'pixelated',
   },
   fab: {
     position: 'absolute',
