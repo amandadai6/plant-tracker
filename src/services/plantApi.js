@@ -9,6 +9,7 @@ const PROXY_BASE_URL = 'https://plant-tracker-api.vercel.app';
  * @returns {Array} Normalized array of plant species results.
  */
 export async function searchPlants(query) {
+  if (!query || typeof query !== 'string') throw new Error('Query must be a non-empty string');
   const url = `${PROXY_BASE_URL}/api/plants/search?q=${encodeURIComponent(query.trim())}`;
   const response = await fetch(url);
 

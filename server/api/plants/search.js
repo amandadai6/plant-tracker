@@ -20,6 +20,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing search query parameter "q"' });
   }
 
+  if (query.length > 100) {
+    return res.status(400).json({ error: 'Search query is too long' });
+  }
+
   const apiKey = process.env.PERENUAL_API_KEY;
 
   if (!apiKey) {
@@ -29,7 +33,15 @@ export default async function handler(req, res) {
 
   try {
     const url = `${PERENUAL_BASE_URL}?key=${apiKey}&q=${encodeURIComponent(query.trim())}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 5000);
+
+    let response;
+    try {
+      response = await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
 
     if (!response.ok) {
       console.error(`Perenual API returned ${response.status}`);

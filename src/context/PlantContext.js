@@ -12,6 +12,7 @@ export function PlantProvider({ children }) {
   const [plants, setPlants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load once on mount
   useEffect(() => {
     loadPlants();
   }, []);

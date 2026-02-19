@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,13 @@ export default function AddPlantScreen() {
   const [showNicknameStep, setShowNicknameStep] = useState(false);
   const [plantName, setPlantName] = useState('');
   const [message, setMessage] = useState(null);
+  const feedbackTimeout = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+    };
+  }, []);
 
   async function handleSearch() {
     if (!searchQuery.trim()) return;
@@ -88,8 +95,9 @@ export default function AddPlantScreen() {
   }
 
   function showFeedback(type, text) {
+    if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 2500);
+    feedbackTimeout.current = setTimeout(() => setMessage(null), 2500);
   }
 
   function renderSpeciesItem({ item }) {

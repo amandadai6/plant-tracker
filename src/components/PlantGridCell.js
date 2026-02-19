@@ -1,15 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, Pressable, Animated, Easing, StyleSheet } from 'react-native';
 
-const plantImage = require('../../assets/sprites/plant-generic.png');
+const genericSprite = require('../../assets/sprites/plant-generic.png');
 
 export default function PlantGridCell({ plant, onPress, cellSize }) {
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const delay = Math.random() * 1000;
+    let animation = null;
     const timeout = setTimeout(() => {
-      Animated.loop(
+      animation = Animated.loop(
         Animated.sequence([
           Animated.timing(rotation, {
             toValue: 3,
@@ -30,9 +31,13 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
             useNativeDriver: true,
           }),
         ]),
-      ).start();
+      );
+      animation.start();
     }, delay);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      if (animation) animation.stop();
+    };
   }, [rotation]);
 
   const rotateInterpolation = rotation.interpolate({
@@ -50,6 +55,9 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
         { width: cellSize, opacity: pressed ? 0.8 : 1 },
       ]}
     >
+      <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+        {plant.nickname}
+      </Text>
       <Animated.View
         style={[
           styles.plantWrapper,
@@ -57,14 +65,11 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
         ]}
       >
         <Image
-          source={plantImage}
+          source={plant.thumbnail ? { uri: plant.thumbnail } : genericSprite}
           style={{ width: spriteSize, height: spriteSize }}
           resizeMode="contain"
         />
       </Animated.View>
-      <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-        {plant.nickname}
-      </Text>
     </Pressable>
   );
 }
@@ -72,7 +77,7 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
 const styles = StyleSheet.create({
   cell: {
     alignItems: 'center',
-    paddingTop: 4,
+    justifyContent: 'flex-end',
   },
   plantWrapper: {
     alignItems: 'center',

@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlants } from '../context/PlantContext';
 import PlantGridCell from '../components/PlantGridCell';
 import PlantDetailModal from '../components/PlantDetailModal';
+import PalletTownBanner from '../components/PalletTownBanner';
+import SoilStrip from '../components/SoilStrip';
 
 const grassTile = require('../../assets/sprites/grass-tile.png');
 export default function HomeScreen({ navigation }) {
@@ -21,7 +23,7 @@ export default function HomeScreen({ navigation }) {
   const [selectedPlantId, setSelectedPlantId] = useState(null);
 
   const NUM_COLUMNS = 4;
-  const GRID_PADDING = 12;
+  const GRID_PADDING = 24;
   const CELL_GAP = 4;
   const availableWidth = width - GRID_PADDING * 2;
   const numColumns = NUM_COLUMNS;
@@ -69,16 +71,17 @@ export default function HomeScreen({ navigation }) {
       resizeMode="repeat"
       style={styles.container}
     >
+      <PalletTownBanner />
+
       {plants.length === 0 ? (
         renderEmptyState()
       ) : (
         <ScrollView
           contentContainerStyle={[
             styles.grid,
-            { paddingHorizontal: GRID_PADDING, paddingTop: insets.top + 12, paddingBottom: 80 },
+            { paddingHorizontal: GRID_PADDING, paddingTop: insets.top + 60, paddingBottom: 80 },
           ]}
         >
-          <Text style={styles.headerTitle}>Pallet Town</Text>
           {rows.map((row) => (
             <View key={row.map((p) => p.id).join('-')} style={styles.rowContainer}>
               {/* Plants sitting above the soil */}
@@ -94,16 +97,11 @@ export default function HomeScreen({ navigation }) {
                 ))}
               </View>
               {/* Continuous soil strip pulled up into the plants */}
-              <View
-                style={[
-                  styles.soilStrip,
-                  {
-                    width: soilStripWidth,
-                    height: soilStripHeight,
-                    borderRadius: soilStripHeight / 2,
-                    marginTop: -soilOverlap,
-                  },
-                ]}
+              <SoilStrip
+                width={soilStripWidth}
+                height={soilStripHeight}
+                borderRadius={soilStripHeight / 2}
+                marginTop={-soilOverlap}
               />
             </View>
           ))}
@@ -133,17 +131,6 @@ const styles = StyleSheet.create({
   grid: {
     alignItems: 'flex-start',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    textAlign: 'center',
-    width: '100%',
-    marginBottom: 20,
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 2,
-  },
   rowContainer: {
     width: '100%',
     alignItems: 'flex-start',
@@ -154,15 +141,6 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     alignItems: 'flex-end',
     zIndex: 2,
-  },
-  soilStrip: {
-    backgroundColor: '#8B6914',
-    zIndex: 1,
-    borderWidth: 2,
-    borderTopColor: '#A07828',
-    borderLeftColor: '#A07828',
-    borderRightColor: '#6B4C12',
-    borderBottomColor: '#6B4C12',
   },
   emptyContainer: {
     flex: 1,
