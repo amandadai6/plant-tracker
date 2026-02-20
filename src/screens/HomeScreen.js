@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
   ImageBackground,
   Image,
+  Animated,
   TouchableOpacity,
   useWindowDimensions,
   StyleSheet,
@@ -26,6 +27,15 @@ export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [selectedPlantId, setSelectedPlantId] = useState(null);
 
+  const bulbasaurX = useRef(new Animated.Value(0)).current;
+  const bulbasaurScaleX = useRef(new Animated.Value(1)).current;
+
+  const charmanderX = useRef(new Animated.Value(0)).current;
+  const charmanderScaleX = useRef(new Animated.Value(1)).current;
+
+  const squirtleX = useRef(new Animated.Value(0)).current;
+  const squirtleScaleX = useRef(new Animated.Value(1)).current;
+
   const NUM_COLUMNS = 4;
   const GRID_PADDING = 24;
   const CELL_GAP = 4;
@@ -44,6 +54,51 @@ export default function HomeScreen({ navigation }) {
       setSelectedPlantId(null);
     }
   }, [plants, selectedPlantId]);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bulbasaurScaleX, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.timing(bulbasaurX, { toValue: 10, duration: 1000, useNativeDriver: true }),
+        Animated.delay(2500),
+        Animated.timing(bulbasaurScaleX, { toValue: 1, duration: 0, useNativeDriver: true }),
+        Animated.timing(bulbasaurX, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        Animated.delay(2500),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(charmanderScaleX, { toValue: 1, duration: 0, useNativeDriver: true }),
+        Animated.timing(charmanderX, { toValue: -12, duration: 1000, useNativeDriver: true }),
+        Animated.delay(2000),
+        Animated.timing(charmanderScaleX, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.timing(charmanderX, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        Animated.delay(2000),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(squirtleScaleX, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.timing(squirtleX, { toValue: 12, duration: 1000, useNativeDriver: true }),
+        Animated.delay(3000),
+        Animated.timing(squirtleScaleX, { toValue: 1, duration: 0, useNativeDriver: true }),
+        Animated.timing(squirtleX, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        Animated.delay(3000),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
 
   // Group plants into rows
   const rows = useMemo(() => {
@@ -112,11 +167,26 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       )}
 
-      <View style={[styles.starterRow, { bottom: insets.bottom + 20 }]}>
-        <Image source={bulbasaur} style={styles.starterSprite} />
-        <Image source={charmander} style={[styles.starterSprite, { width: 24, height: 24 }]} />
-        <Image source={squirtle} style={[styles.starterSprite, { width: 24, height: 24 }]} />
-      </View>
+      <Animated.View style={[
+        styles.bulbasaurSprite,
+        { bottom: insets.bottom + 20, transform: [{ translateX: bulbasaurX }, { scaleX: bulbasaurScaleX }] },
+      ]}>
+        <Image source={bulbasaur} style={{ width: 42, height: 42 }} />
+      </Animated.View>
+
+      <Animated.View style={[
+        styles.charmanderSprite,
+        { bottom: insets.bottom + 68, transform: [{ translateX: charmanderX }, { scaleX: charmanderScaleX }] },
+      ]}>
+        <Image source={charmander} style={{ width: 24, height: 24 }} />
+      </Animated.View>
+
+      <Animated.View style={[
+        styles.squirtleSprite,
+        { top: insets.top + 35, transform: [{ translateX: squirtleX }, { scaleX: squirtleScaleX }] },
+      ]}>
+        <Image source={squirtle} style={{ width: 24, height: 24 }} />
+      </Animated.View>
 
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 24 }]}
@@ -151,6 +221,7 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     alignItems: 'flex-end',
     zIndex: 2,
+    paddingTop: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -175,16 +246,17 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
-  starterRow: {
+  bulbasaurSprite: {
     position: 'absolute',
     left: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
   },
-  starterSprite: {
-    width: 48,
-    height: 48,
-    imageRendering: 'pixelated',
+  charmanderSprite: {
+    position: 'absolute',
+    left: 88,
+  },
+  squirtleSprite: {
+    position: 'absolute',
+    right: 54,
   },
   fab: {
     position: 'absolute',

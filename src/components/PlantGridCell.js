@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, Pressable, Animated, Easing, StyleSheet } from 'react-native';
-
-const genericSprite = require('../../assets/sprites/plant-generic.png');
+import { SPRITES } from '../sprites';
 
 export default function PlantGridCell({ plant, onPress, cellSize }) {
+  const spriteEntry = SPRITES.find(s => s.key === plant.sprite) ?? SPRITES[0];
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
     outputRange: ['-3deg', '3deg'],
   });
 
-  const spriteSize = cellSize * 0.65;
+  const spriteSize = 32;
 
   return (
     <Pressable
@@ -65,7 +65,7 @@ export default function PlantGridCell({ plant, onPress, cellSize }) {
         ]}
       >
         <Image
-          source={plant.thumbnail ? { uri: plant.thumbnail } : genericSprite}
+          source={spriteEntry.source}
           style={{ width: spriteSize, height: spriteSize }}
           resizeMode="contain"
         />
@@ -83,9 +83,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   name: {
-    marginTop: 2,
+    marginBottom: 5,
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 10,
-    fontWeight: '600',
     color: '#fff',
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.7)',

@@ -9,27 +9,29 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { usePlants } from '../context/PlantContext';
 import { searchPlants } from '../services/plantApi';
+import { SPRITES } from '../sprites';
 
-// Flow: search species (optional) → select or skip → enter nickname → save
 export default function AddPlantScreen() {
   const { addPlant } = usePlants();
 
-  // Species search state
+  const [step, setStep] = useState('form'); // 'form' | 'sprite'
+
+  // Form step state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
-
-  // Selected species (null if user skips)
   const [selectedSpecies, setSelectedSpecies] = useState(null);
-
-  // Nickname step — visible after species selection or skip
-  const [showNicknameStep, setShowNicknameStep] = useState(false);
   const [plantName, setPlantName] = useState('');
+
+  // Sprite step state
+  const [spriteIndex, setSpriteIndex] = useState(0);
+
   const [message, setMessage] = useState(null);
   const feedbackTimeout = useRef(null);
 
@@ -41,11 +43,9 @@ export default function AddPlantScreen() {
 
   async function handleSearch() {
     if (!searchQuery.trim()) return;
-
     setIsSearching(true);
     setSearchError(null);
     setHasSearched(false);
-
     try {
       const results = await searchPlants(searchQuery);
       setSearchResults(results);
@@ -59,35 +59,38 @@ export default function AddPlantScreen() {
 
   function handleSelectSpecies(species) {
     setSelectedSpecies(species);
-    // Pre-fill nickname with the common name
     setPlantName(species.commonName || '');
-    setShowNicknameStep(true);
+    setSearchResults([]);
+    setHasSearched(false);
   }
 
-  function handleSkip() {
-    setSelectedSpecies(null);
-    setPlantName('');
-    setShowNicknameStep(true);
+  function handleNext() {
+    setStep('sprite');
   }
 
-  // Go back from nickname step to search step
-  function handleBackToSearch() {
-    setShowNicknameStep(false);
-    setSelectedSpecies(null);
-    setPlantName('');
+  function handleBack() {
+    setStep('form');
+  }
+
+  function handlePrevSprite() {
+    setSpriteIndex(i => (i - 1 + SPRITES.length) % SPRITES.length);
+  }
+
+  function handleNextSprite() {
+    setSpriteIndex(i => (i + 1) % SPRITES.length);
   }
 
   async function handleAddPlant() {
     if (!plantName.trim()) return;
-
     try {
-      await addPlant(plantName, selectedSpecies);
+      await addPlant(plantName, selectedSpecies, SPRITES[spriteIndex].key);
       setPlantName('');
       setSelectedSpecies(null);
-      setShowNicknameStep(false);
       setSearchQuery('');
       setSearchResults([]);
       setHasSearched(false);
+      setSpriteIndex(0);
+      setStep('form');
       showFeedback('success', 'Plant added!');
     } catch {
       showFeedback('error', 'Failed to add plant. Please try again.');
@@ -117,118 +120,77 @@ export default function AddPlantScreen() {
     );
   }
 
-  // --- Nickname step ---
-  if (showNicknameStep) {
+  function renderFeedback() {
+    if (!message) return null;
     return (
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {message && (
-          <View
-            style={[
-              styles.messageContainer,
-              message.type === 'success' ? styles.successMessage : styles.errorMessage,
-            ]}
-          >
-            <Text
-              style={[
-                styles.messageText,
-                message.type === 'success' ? styles.successText : styles.errorText,
-              ]}
-            >
-              {message.type === 'success' ? '✓ ' : '✕ '}
-              {message.text}
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.content}>
-          <Text style={styles.title}>Name Your Plant</Text>
-          {selectedSpecies && (
-            <Text style={styles.subtitle}>
-              Species: {selectedSpecies.commonName}
-            </Text>
-          )}
-          {!selectedSpecies && (
-            <Text style={styles.subtitle}>
-              Give your plant a nickname to start tracking its care.
-            </Text>
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Plant nickname (e.g., Kitchen fern)"
-            value={plantName}
-            onChangeText={setPlantName}
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={handleAddPlant}
-          />
-
-          <TouchableOpacity
-            style={[styles.button, styles.addButton, !plantName.trim() && styles.buttonDisabled]}
-            onPress={handleAddPlant}
-            disabled={!plantName.trim()}
-          >
-            <Text style={styles.buttonText}>Add Plant</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.backButton]}
-            onPress={handleBackToSearch}
-          >
-            <Text style={styles.backButtonText}>Back to Search</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+      <View style={[styles.messageContainer, message.type === 'success' ? styles.successMessage : styles.errorMessage]}>
+        <Text style={[styles.messageText, message.type === 'success' ? styles.successText : styles.errorText]}>
+          {message.type === 'success' ? '✓ ' : '✕ '}{message.text}
+        </Text>
+      </View>
     );
   }
 
-  // --- Search step (default) ---
+  // --- Sprite picker step ---
+  if (step === 'sprite') {
+    const currentSprite = SPRITES[spriteIndex];
+    return (
+      <View style={styles.container}>
+        {renderFeedback()}
+        <View style={styles.spriteContent}>
+          <Text style={styles.title}>Choose a Sprite</Text>
+          <Text style={styles.subtitle}>{plantName}</Text>
+          <View style={styles.spritePicker}>
+            <TouchableOpacity style={styles.arrowButton} onPress={handlePrevSprite}>
+              <Text style={styles.arrowText}>←</Text>
+            </TouchableOpacity>
+            <View style={styles.spritePreview}>
+              <Image
+                source={currentSprite.source}
+                style={styles.spriteImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.spriteName}>{currentSprite.displayName}</Text>
+            </View>
+            <TouchableOpacity style={styles.arrowButton} onPress={handleNextSprite}>
+              <Text style={styles.arrowText}>→</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={[styles.button, styles.addButton]} onPress={handleAddPlant}>
+            <Text style={styles.buttonText}>Add Plant</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.backButton]} onPress={handleBack}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // --- Form step (search + name combined) ---
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {message && (
-        <View
-          style={[
-            styles.messageContainer,
-            message.type === 'success' ? styles.successMessage : styles.errorMessage,
-          ]}
-        >
-          <Text
-            style={[
-              styles.messageText,
-              message.type === 'success' ? styles.successText : styles.errorText,
-            ]}
-          >
-            {message.type === 'success' ? '✓ ' : '✕ '}
-            {message.text}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.searchContent}>
+      {renderFeedback()}
+      <View style={styles.formContent}>
         <Text style={styles.title}>Add a Plant</Text>
         <Text style={styles.subtitle}>
-          Search for a plant species, or skip to add with just a nickname.
+          Optionally search for a species, then give your plant a name.
         </Text>
 
-        {/* Search input row */}
         <View style={styles.searchRow}>
           <TextInput
             style={[styles.input, styles.searchInput]}
             placeholder="Search species (e.g., Monstera)"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            autoFocus
             returnKeyType="search"
             onSubmitEditing={handleSearch}
           />
           <TouchableOpacity
-            style={[styles.searchButton, !searchQuery.trim() && styles.buttonDisabled]}
+            style={[styles.searchButton, (!searchQuery.trim() || isSearching) && styles.buttonDisabled]}
             onPress={handleSearch}
             disabled={!searchQuery.trim() || isSearching}
           >
@@ -236,22 +198,18 @@ export default function AddPlantScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Loading indicator */}
         {isSearching && (
-          <ActivityIndicator size="large" color="#1B4332" style={styles.loader} />
+          <ActivityIndicator size="small" color="#1B4332" style={styles.loader} />
         )}
-
-        {/* Search error */}
         {searchError && (
           <Text style={styles.searchErrorText}>{searchError}</Text>
         )}
-
-        {/* Empty results */}
         {hasSearched && !isSearching && searchResults.length === 0 && !searchError && (
-          <Text style={styles.emptyText}>No plants found. Try a different search or skip.</Text>
+          <Text style={styles.emptyText}>No plants found. Try a different search.</Text>
         )}
-
-        {/* Search results list */}
+        {selectedSpecies && (
+          <Text style={styles.selectedSpeciesText}>Species: {selectedSpecies.commonName}</Text>
+        )}
         {searchResults.length > 0 && (
           <FlatList
             data={searchResults}
@@ -262,12 +220,20 @@ export default function AddPlantScreen() {
           />
         )}
 
-        {/* Skip button — always visible */}
+        <TextInput
+          style={styles.input}
+          placeholder="Plant nickname (e.g., Kitchen fern)"
+          value={plantName}
+          onChangeText={setPlantName}
+          returnKeyType="done"
+        />
+
         <TouchableOpacity
-          style={[styles.button, styles.skipButton]}
-          onPress={handleSkip}
+          style={[styles.button, styles.addButton, !plantName.trim() && styles.buttonDisabled]}
+          onPress={handleNext}
+          disabled={!plantName.trim()}
         >
-          <Text style={styles.skipButtonText}>Skip — Add Without Species</Text>
+          <Text style={styles.buttonText}>Next →</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -303,15 +269,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#C62828',
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  searchContent: {
+  formContent: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 24,
+  },
+  spriteContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 32,
@@ -326,19 +293,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginBottom: 16,
-  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
+    marginBottom: 0,
   },
   searchInput: {
     flex: 1,
@@ -350,59 +309,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  button: {
+  input: {
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  addButton: {
-    backgroundColor: '#1B4332',
-  },
-  buttonDisabled: {
-    backgroundColor: '#2D6A4F',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  skipButton: {
-    backgroundColor: 'transparent',
+    fontSize: 16,
     borderWidth: 1,
-    borderColor: '#1B4332',
-  },
-  skipButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1B4332',
-  },
-  backButton: {
-    backgroundColor: 'transparent',
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
+    borderColor: '#E0E0E0',
+    marginBottom: 16,
   },
   loader: {
-    marginVertical: 20,
+    marginVertical: 8,
   },
   searchErrorText: {
     color: '#C62828',
     textAlign: 'center',
-    marginVertical: 12,
+    marginVertical: 8,
     fontSize: 14,
   },
   emptyText: {
     color: '#666',
     textAlign: 'center',
-    marginVertical: 16,
+    marginVertical: 8,
     fontSize: 14,
   },
+  selectedSpeciesText: {
+    fontSize: 13,
+    color: '#2D6A4F',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
   resultsList: {
-    flex: 1,
-    marginVertical: 8,
+    maxHeight: 200,
+    marginBottom: 16,
   },
   resultItem: {
     backgroundColor: '#fff',
@@ -427,5 +367,60 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 4,
+  },
+  button: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginVertical: 8,
+    width: '100%',
+  },
+  addButton: {
+    backgroundColor: '#1B4332',
+  },
+  buttonDisabled: {
+    backgroundColor: '#2D6A4F',
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  backButton: {
+    backgroundColor: 'transparent',
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  spritePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 32,
+    gap: 24,
+  },
+  arrowButton: {
+    padding: 12,
+  },
+  arrowText: {
+    fontSize: 32,
+    color: '#1B4332',
+    fontWeight: 'bold',
+  },
+  spritePreview: {
+    alignItems: 'center',
+  },
+  spriteImage: {
+    width: 128,
+    height: 128,
+  },
+  spriteName: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#14532D',
   },
 });
