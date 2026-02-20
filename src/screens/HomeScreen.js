@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         <ScrollView
           contentContainerStyle={[
             styles.grid,
-            { paddingHorizontal: GRID_PADDING, paddingTop: insets.top + 60, paddingBottom: 80 },
+            { paddingHorizontal: GRID_PADDING, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 100, flexGrow: 1, justifyContent: 'center' },
           ]}
         >
           {rows.map((row) => (
@@ -209,11 +209,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   grid: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   rowContainer: {
     width: '100%',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 30,
   },
   plantsRow: {
