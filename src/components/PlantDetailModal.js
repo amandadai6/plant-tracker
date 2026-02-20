@@ -1,27 +1,31 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Modal, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Modal, Image } from 'react-native';
 import { usePlants } from '../context/PlantContext';
 import { SPRITES } from '../sprites';
 import CalendarPickerModal from './CalendarPickerModal';
 import ConfirmModal from './ConfirmModal';
-import EditNameModal from './EditNameModal';
+
+const trashSprite = require('../../assets/sprites/trash.png');
 
 export default function PlantDetailModal({ visible, plant, onClose }) {
   const { deletePlant, updatePlantCare, updatePlantName } = usePlants();
   const [showWaterPicker, setShowWaterPicker] = useState(false);
   const [showPestPicker, setShowPestPicker] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [spriteIndex, setSpriteIndex] = useState(0);
   const [isEditingSprite, setIsEditingSprite] = useState(false);
+  const [editingName, setEditingName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
 
   useEffect(() => {
     if (visible && plant) {
       const idx = SPRITES.findIndex(s => s.key === plant.sprite);
       setSpriteIndex(idx >= 0 ? idx : 0);
       setIsEditingSprite(false);
+      setIsEditingName(false);
+      setEditingName(plant.nickname);
     }
-  }, [visible, plant?.sprite]);
+  }, [visible, plant?.sprite, plant?.nickname]);
 
   const { minDate, maxDate } = useMemo(() => {
     const min = new Date();
@@ -63,9 +67,14 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
     deletePlant(plant.id);
   }
 
-  function handleNameSave(newName) {
-    setShowEditNameModal(false);
-    updatePlantName(plant.id, newName);
+  function handleNameBlur() {
+    setIsEditingName(false);
+    const trimmed = editingName.trim();
+    if (trimmed) {
+      updatePlantName(plant.id, trimmed);
+    } else {
+      setEditingName(plant.nickname);
+    }
   }
 
   function handleWaterDateConfirm(dateString) {
@@ -108,12 +117,15 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
                 <Image source={SPRITES[spriteIndex].source} style={styles.spriteImage} resizeMode="contain" />
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              onPress={() => setShowEditNameModal(true)}
-              style={styles.nameButton}
-            >
-              <Text style={styles.name}>{plant.nickname}</Text>
-            </TouchableOpacity>
+            <View style={[styles.nameWrapper, isEditingName && styles.nameWrapperActive]}>
+              <TextInput
+                style={styles.nameInput}
+                value={editingName}
+                onChangeText={setEditingName}
+                onFocus={() => setIsEditingName(true)}
+                onBlur={handleNameBlur}
+              />
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -167,7 +179,8 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
             style={styles.deleteButton}
             onPress={() => setShowDeleteModal(true)}
           >
-            <Text style={styles.deleteButtonText}>Delete Plant</Text>
+            <Image source={trashSprite} style={styles.trashIcon} />
+            <Text style={styles.deleteButtonText}>Delete plant</Text>
           </TouchableOpacity>
         </View>
         </TouchableWithoutFeedback>
@@ -203,12 +216,6 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
         cancelText="Cancel"
       />
 
-      <EditNameModal
-        visible={showEditNameModal}
-        currentName={plant.nickname}
-        onSave={handleNameSave}
-        onCancel={() => setShowEditNameModal(false)}
-      />
     </Modal>
   );
 }
@@ -240,13 +247,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 8,
   },
-  nameButton: {
+  nameWrapper: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
-  name: {
+  nameWrapperActive: {
+    borderWidth: 1.5,
+    borderColor: '#14532D',
+  },
+  nameInput: {
+    flex: 1,
     fontFamily: 'Nunito_700Bold',
     fontSize: 22,
     color: '#14532D',
+    padding: 0,
   },
   closeButton: {
     width: 32,
@@ -273,8 +291,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
   },
   spriteImage: {
-    width: 48,
-    height: 48,
+    width: 38,
+    height: 38,
   },
   divider: {
     height: 1,
@@ -320,16 +338,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   deleteButton: {
-    backgroundColor: '#fee2e2',
-    paddingVertical: 14,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#fecaca',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  trashIcon: {
+    width: 20,
+    height: 20,
   },
   deleteButtonText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: '#dc2626',
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    color: '#999',
   },
 });

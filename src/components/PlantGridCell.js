@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   name: {
     marginBottom: 5,
     fontFamily: 'Nunito_600SemiBold',
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.7)',

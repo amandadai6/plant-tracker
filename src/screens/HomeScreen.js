@@ -189,7 +189,7 @@ export default function HomeScreen({ navigation }) {
       </Animated.View>
 
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + 24 }]}
+        style={[styles.fab, { bottom: insets.bottom + 24, right: GRID_PADDING }]}
         onPress={() => navigation.navigate('AddPlant')}
       >
         <Text style={styles.fabText}>+</Text>
@@ -260,23 +260,23 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#1B4332',
+    width: 34,
+    height: 34,
+    borderRadius: 0,
+    backgroundColor: 'rgba(27, 67, 50, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(27, 67, 50, 0.7)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 0,
+    elevation: 3,
   },
   fabText: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
-    marginTop: -2,
+    fontFamily: 'PressStart2P',
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
 });
