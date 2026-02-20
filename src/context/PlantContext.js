@@ -30,7 +30,7 @@ export function PlantProvider({ children }) {
 
   // speciesData is optional — null when user skips species search.
   // When provided, it contains care fields from the Perenual API.
-  async function addPlant(nickname, speciesData = null) {
+  async function addPlant(nickname, speciesData = null, spriteKey = 'sprout') {
     const newPlant = {
       id: generateId(),
       nickname: nickname.trim(),
@@ -40,57 +40,69 @@ export function PlantProvider({ children }) {
       watering: speciesData?.watering || null,
       sunlight: speciesData?.sunlight || [],
       cycle: speciesData?.cycle || null,
-      thumbnail: speciesData?.thumbnail || null,
+      sprite: spriteKey,
       lastWatered: null,
       lastPestTreatment: null,
     };
-    const previousPlants = plants;
-    const updatedPlants = [...plants, newPlant];
-    setPlants(updatedPlants);
+    let previous;
+    let next;
+    setPlants(prev => {
+      previous = prev;
+      next = [...prev, newPlant];
+      return next;
+    });
     try {
-      await savePlants(updatedPlants);
+      await savePlants(next);
     } catch {
-      setPlants(previousPlants);
+      setPlants(previous);
       throw new Error('Failed to save plant.');
     }
   }
 
   async function deletePlant(id) {
-    const previousPlants = plants;
-    const updatedPlants = plants.filter((plant) => plant.id !== id);
-    setPlants(updatedPlants);
+    let previous;
+    let next;
+    setPlants(prev => {
+      previous = prev;
+      next = prev.filter(p => p.id !== id);
+      return next;
+    });
     try {
-      await savePlants(updatedPlants);
+      await savePlants(next);
     } catch {
-      setPlants(previousPlants);
+      setPlants(previous);
       Alert.alert('Error', 'Failed to delete plant. Please try again.');
     }
   }
 
-  async function updatePlantCare(id, field, date) {
-    const previousPlants = plants;
-    const updatedPlants = plants.map((plant) =>
-      plant.id === id ? { ...plant, [field]: date } : plant
-    );
-    setPlants(updatedPlants);
+  async function updatePlantCare(id, field, value) {
+    let previous;
+    let next;
+    setPlants(prev => {
+      previous = prev;
+      next = prev.map(p => p.id === id ? { ...p, [field]: value } : p);
+      return next;
+    });
     try {
-      await savePlants(updatedPlants);
+      await savePlants(next);
     } catch {
-      setPlants(previousPlants);
+      setPlants(previous);
       Alert.alert('Error', 'Failed to update plant. Please try again.');
     }
   }
 
   async function updatePlantName(id, newName) {
-    const previousPlants = plants;
-    const updatedPlants = plants.map((plant) =>
-      plant.id === id ? { ...plant, nickname: newName.trim() } : plant
-    );
-    setPlants(updatedPlants);
+    let previous;
+    let next;
+    setPlants(prev => {
+      previous = prev;
+      next = prev.map(p => p.id === id ? { ...p, nickname: newName.trim() } : p);
+      return next;
+    });
     try {
-      await savePlants(updatedPlants);
+      await savePlants(next);
     } catch {
-      setPlants(previousPlants);
+      setPlants(previous);
       Alert.alert('Error', 'Failed to rename plant. Please try again.');
     }
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
@@ -7,55 +7,28 @@ export default function CalendarPickerModal({
   selectedDate,
   onConfirm,
   onCancel,
-  onClear,
-  showClear,
   minDate,
   maxDate,
   title,
 }) {
-  const [tempSelectedDate, setTempSelectedDate] = useState(null);
-
-  useEffect(() => {
-    if (visible) {
-      setTempSelectedDate(selectedDate || null);
-    }
-  }, [visible, selectedDate]);
-
   function handleDayPress(day) {
-    setTempSelectedDate(day.dateString);
-  }
-
-  function handleConfirm() {
-    if (tempSelectedDate) {
-      onConfirm(tempSelectedDate);
-    }
+    onConfirm(day.dateString);
   }
 
   function handleDismiss() {
-    setTempSelectedDate(null);
     onCancel();
   }
 
-  function handleClear() {
-    setTempSelectedDate(null);
-    if (onClear) {
-      onClear();
-    }
+  function formatLocalDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
-  function formatMinDate() {
-    if (!minDate) return undefined;
-    return minDate.toISOString().split('T')[0];
-  }
-
-  function formatMaxDate() {
-    if (!maxDate) return undefined;
-    return maxDate.toISOString().split('T')[0];
-  }
-
-  const markedDates = tempSelectedDate
+  const markedDates = selectedDate
     ? {
-        [tempSelectedDate]: {
+        [selectedDate]: {
           selected: true,
           selectedColor: '#1B4332',
         },
@@ -79,9 +52,9 @@ export default function CalendarPickerModal({
           </View>
 
           <Calendar
-            current={tempSelectedDate || undefined}
-            minDate={formatMinDate()}
-            maxDate={formatMaxDate()}
+            current={selectedDate || new Date().toISOString().split('T')[0]}
+            minDate={minDate ? formatLocalDate(minDate) : undefined}
+            maxDate={maxDate ? formatLocalDate(maxDate) : undefined}
             onDayPress={handleDayPress}
             markedDates={markedDates}
             enableSwipeMonths
@@ -108,30 +81,6 @@ export default function CalendarPickerModal({
             style={styles.calendar}
           />
 
-          {/* Only show button row if there's something to show */}
-          {(showClear || tempSelectedDate) && (
-            <View style={styles.buttonRow}>
-              {showClear ? (
-                <TouchableOpacity
-                  style={[styles.button, styles.clearButton]}
-                  onPress={handleClear}
-                >
-                  <Text style={styles.clearButtonText}>Clear</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.button} />
-              )}
-
-              {tempSelectedDate && (
-                <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
-                  onPress={handleConfirm}
-                >
-                  <Text style={styles.confirmButtonText}>Confirm</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
         </View>
       </View>
     </Modal>
@@ -165,8 +114,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
+    fontFamily: 'Nunito_700Bold',
     fontSize: 18,
-    fontWeight: '600',
     color: '#14532D',
     flex: 1,
   },
@@ -177,41 +126,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButtonText: {
+    fontFamily: 'Nunito_400Regular',
     fontSize: 20,
     color: '#666666',
-    fontWeight: '300',
   },
   calendar: {
     borderRadius: 12,
     marginBottom: 16,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  clearButton: {
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  clearButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  confirmButton: {
-    backgroundColor: '#1B4332',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 });

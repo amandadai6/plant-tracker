@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
+import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { PlantProvider, usePlants } from './src/context/PlantContext';
 import AddPlantScreen from './src/screens/AddPlantScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -81,6 +82,9 @@ function AppNavigator() {
 export default function App() {
   const [fontsLoaded] = useFonts({
     PressStart2P: require('./assets/fonts/PressStart2P.ttf'),
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
   });
 
   if (!fontsLoaded) {

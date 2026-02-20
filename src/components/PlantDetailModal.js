@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Modal, Image } from 'react-native';
 import { usePlants } from '../context/PlantContext';
+import { SPRITES } from '../sprites';
 import CalendarPickerModal from './CalendarPickerModal';
 import ConfirmModal from './ConfirmModal';
 import EditNameModal from './EditNameModal';
@@ -11,6 +12,16 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
   const [showPestPicker, setShowPestPicker] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
+  const [spriteIndex, setSpriteIndex] = useState(0);
+  const [isEditingSprite, setIsEditingSprite] = useState(false);
+
+  useEffect(() => {
+    if (visible && plant) {
+      const idx = SPRITES.findIndex(s => s.key === plant.sprite);
+      setSpriteIndex(idx >= 0 ? idx : 0);
+      setIsEditingSprite(false);
+    }
+  }, [visible, plant?.sprite]);
 
   const { minDate, maxDate } = useMemo(() => {
     const min = new Date();
@@ -24,14 +35,26 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
 
   function formatDate(dateString) {
     if (!dateString) return 'Not set';
-    const date = new Date(dateString);
-    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-    return date.toLocaleDateString(undefined, options);
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    return `${month}/${day}/${year}`;
   }
 
   function getDateString(isoString) {
     if (!isoString) return null;
     return isoString.split('T')[0];
+  }
+
+  function handlePrevSprite() {
+    setSpriteIndex(i => (i - 1 + SPRITES.length) % SPRITES.length);
+  }
+
+  function handleNextSprite() {
+    setSpriteIndex(i => (i + 1) % SPRITES.length);
+  }
+
+  function handleConfirmSprite() {
+    updatePlantCare(plant.id, 'sprite', SPRITES[spriteIndex].key);
+    setIsEditingSprite(false);
   }
 
   function handleDeleteConfirm() {
@@ -47,25 +70,14 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
 
   function handleWaterDateConfirm(dateString) {
     setShowWaterPicker(false);
-    const date = new Date(dateString);
-    updatePlantCare(plant.id, 'lastWatered', date.toISOString());
-  }
-
-  function handleWaterDateClear() {
-    setShowWaterPicker(false);
-    updatePlantCare(plant.id, 'lastWatered', null);
+    updatePlantCare(plant.id, 'lastWatered', dateString);
   }
 
   function handlePestDateConfirm(dateString) {
     setShowPestPicker(false);
-    const date = new Date(dateString);
-    updatePlantCare(plant.id, 'lastPestTreatment', date.toISOString());
+    updatePlantCare(plant.id, 'lastPestTreatment', dateString);
   }
 
-  function handlePestDateClear() {
-    setShowPestPicker(false);
-    updatePlantCare(plant.id, 'lastPestTreatment', null);
-  }
 
   return (
     <Modal
@@ -74,15 +86,33 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
       animationType="fade"
       onRequestClose={onClose}
     >
+      <TouchableWithoutFeedback onPress={() => { if (isEditingSprite) handleConfirmSprite(); }}>
       <View style={styles.overlay}>
+        <TouchableWithoutFeedback onPress={() => {}}>
         <View style={styles.container}>
           <View style={styles.header}>
+            {isEditingSprite ? (
+              <View style={styles.spritePickerInline}>
+                <TouchableOpacity style={styles.arrowButton} onPress={handlePrevSprite}>
+                  <Text style={styles.arrowText}>←</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleConfirmSprite}>
+                  <Image source={SPRITES[spriteIndex].source} style={styles.spriteImage} resizeMode="contain" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.arrowButton} onPress={handleNextSprite}>
+                  <Text style={styles.arrowText}>→</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setIsEditingSprite(true)}>
+                <Image source={SPRITES[spriteIndex].source} style={styles.spriteImage} resizeMode="contain" />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={() => setShowEditNameModal(true)}
               style={styles.nameButton}
             >
               <Text style={styles.name}>{plant.nickname}</Text>
-              <Text style={styles.editHint}>tap to edit</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
@@ -93,22 +123,42 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
 
           <View style={styles.careRow}>
             <Text style={styles.careLabel}>Last Watered</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowWaterPicker(true)}
-            >
-              <Text style={styles.dateText}>{formatDate(plant.lastWatered)}</Text>
-            </TouchableOpacity>
+            <View style={styles.dateGroup}>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowWaterPicker(true)}
+              >
+                <Text style={styles.dateText}>{formatDate(plant.lastWatered)}</Text>
+              </TouchableOpacity>
+              {!!plant.lastWatered && (
+                <TouchableOpacity
+                  style={styles.clearDateButton}
+                  onPress={() => updatePlantCare(plant.id, 'lastWatered', null)}
+                >
+                  <Text style={styles.clearDateText}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={styles.careRow}>
             <Text style={styles.careLabel}>Last Pest Treatment</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowPestPicker(true)}
-            >
-              <Text style={styles.dateText}>{formatDate(plant.lastPestTreatment)}</Text>
-            </TouchableOpacity>
+            <View style={styles.dateGroup}>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowPestPicker(true)}
+              >
+                <Text style={styles.dateText}>{formatDate(plant.lastPestTreatment)}</Text>
+              </TouchableOpacity>
+              {!!plant.lastPestTreatment && (
+                <TouchableOpacity
+                  style={styles.clearDateButton}
+                  onPress={() => updatePlantCare(plant.id, 'lastPestTreatment', null)}
+                >
+                  <Text style={styles.clearDateText}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={styles.divider} />
@@ -120,15 +170,15 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
             <Text style={styles.deleteButtonText}>Delete Plant</Text>
           </TouchableOpacity>
         </View>
+        </TouchableWithoutFeedback>
       </View>
+      </TouchableWithoutFeedback>
 
       <CalendarPickerModal
         visible={showWaterPicker}
         selectedDate={getDateString(plant.lastWatered)}
         onConfirm={handleWaterDateConfirm}
         onCancel={() => setShowWaterPicker(false)}
-        onClear={handleWaterDateClear}
-        showClear={!!plant.lastWatered}
         minDate={minDate}
         maxDate={maxDate}
         title="Last Watered"
@@ -139,8 +189,6 @@ export default function PlantDetailModal({ visible, plant, onClose }) {
         selectedDate={getDateString(plant.lastPestTreatment)}
         onConfirm={handlePestDateConfirm}
         onCancel={() => setShowPestPicker(false)}
-        onClear={handlePestDateClear}
-        showClear={!!plant.lastPestTreatment}
         minDate={minDate}
         maxDate={maxDate}
         title="Last Pest Treatment"
@@ -188,21 +236,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   nameButton: {
     flex: 1,
   },
   name: {
+    fontFamily: 'Nunito_700Bold',
     fontSize: 22,
-    fontWeight: '600',
     color: '#14532D',
-  },
-  editHint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
   },
   closeButton: {
     width: 32,
@@ -211,9 +255,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButtonText: {
+    fontFamily: 'Nunito_400Regular',
     fontSize: 20,
     color: '#666666',
-    fontWeight: '300',
+  },
+  spritePickerInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  arrowButton: {
+    padding: 4,
+  },
+  arrowText: {
+    fontSize: 18,
+    color: '#1B4332',
+    fontFamily: 'Nunito_700Bold',
+  },
+  spriteImage: {
+    width: 48,
+    height: 48,
   },
   divider: {
     height: 1,
@@ -227,8 +288,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   careLabel: {
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 14,
     color: '#666',
+  },
+  dateGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   dateButton: {
     backgroundColor: '#D8F3DC',
@@ -236,9 +303,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
   },
+  clearDateButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearDateText: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 14,
+    color: '#999',
+  },
   dateText: {
+    fontFamily: 'Nunito_600SemiBold',
     color: '#14532D',
-    fontWeight: '500',
     fontSize: 13,
   },
   deleteButton: {
@@ -250,8 +328,8 @@ const styles = StyleSheet.create({
     borderColor: '#fecaca',
   },
   deleteButtonText: {
+    fontFamily: 'Nunito_700Bold',
     fontSize: 16,
-    fontWeight: '600',
     color: '#dc2626',
   },
 });

@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
+    fontFamily: 'Nunito_700Bold',
     fontSize: 18,
-    fontWeight: '600',
     color: '#14532D',
     flex: 1,
   },
@@ -122,11 +122,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButtonText: {
+    fontFamily: 'Nunito_400Regular',
     fontSize: 20,
     color: '#666666',
-    fontWeight: '300',
   },
   input: {
+    fontFamily: 'Nunito_400Regular',
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
     padding: 16,
@@ -145,8 +146,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2D6A4F',
   },
   saveButtonText: {
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 16,
-    fontWeight: '600',
     color: '#ffffff',
   },
 });

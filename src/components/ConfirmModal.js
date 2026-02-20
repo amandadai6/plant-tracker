@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   message: {
+    fontFamily: 'Nunito_400Regular',
     fontSize: 16,
     color: '#333333',
     textAlign: 'center',
@@ -85,16 +86,16 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   cancelButtonText: {
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 16,
-    fontWeight: '600',
     color: '#666666',
   },
   confirmButton: {
     backgroundColor: '#1B4332',
   },
   confirmButtonText: {
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 16,
-    fontWeight: '600',
     color: '#ffffff',
   },
 });

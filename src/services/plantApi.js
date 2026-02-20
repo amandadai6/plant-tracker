@@ -1,7 +1,7 @@
 // Service layer for searching the Perenual plant database.
 // All requests go through our Vercel proxy — the API key never reaches the client.
 
-const PROXY_BASE_URL = 'https://plant-tracker-api.vercel.app';
+const PROXY_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://plant-tracker-api.vercel.app';
 
 /**
  * Search for plant species by name.
